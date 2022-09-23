@@ -22,7 +22,7 @@ from tqdm import tqdm
 import time
 
 from models.LCCNet import LCCNet
-from ipad_dataset import IPadDataset
+from LabDataset import LabDataset
 
 from quaternion_distances import quaternion_distance
 
@@ -34,19 +34,11 @@ from PIL import Image
 from math import radians
 from torchvision import transforms
 
-finetune_weights = ['finetune/finetune_rot_20_trans_1.5.pth',
-                    'finetune/finetune_rot_10_trans_1.0_16.52434944152832.pth',
-                    'finetune/finetune_rot_5_trans_0.5_6.223089616298676.pth',
-                    'finetune/finetune_rot_2_trans_0.2_4.030896157026291.pth',
-                    'finetune/finetune_rot_1_trans_0.1_1.8796743541955947.pth']
-
-weights = [
-   'pretrained/kitti_iter1.tar',
-   'pretrained/kitti_iter2.tar',
-   'pretrained/kitti_iter3.tar',
-   'pretrained/kitti_iter4.tar',
-   'pretrained/kitti_iter5.tar'
-]
+finetune_weights = ['finetune_lab_sensors/lab_sensors_finetune_rot_20_trans_1.5_51.60001277923584.pth',
+					'finetune_lab_sensors/lab_sensors_finetune_rot_10_trans_1.0_28.590121459960937.pth',
+					'finetune_lab_sensors/lab_sensors_finetune_rot_5_trans_0.5_17.927898502349855.pth',
+					'finetune_lab_sensors/lab_sensors_finetune_rot_2_trans_0.2_7.268995859622955.pth',
+					'finetune_lab_sensors/lab_sensors_finetune_rot_1_trans_0.1_4.266801948547363.pth']
 
 _config = {
     'RUN': 4,
@@ -60,7 +52,7 @@ _config = {
     'norm' : 'bn',
     'save_log': True,
     'dropout': 0.0,
-    'max_depth': 3.5,
+    'max_depth': 4,
     'iterative_method': 'multi_range', # ['multi_range', 'single_range', 'single']
     'outlier_filter': 0,
     'outlier_filter_th': 10,
@@ -77,9 +69,9 @@ EPOCH = 1
 def main(config):
     global EPOCH, finetune_weights
     
-    dataset_class = IPadDataset(num=config['dataset_num'], max_t=config['max_t'], max_r=config['max_r'])    
+    dataset_class = LabDataset(max_r=_config['max_r'], max_t=_config['max_t'])
     
-    img_shape = (1440, 1920) 
+    img_shape = (1200, 1920) 
     input_size = (256, 512)
     
     TestImgLoader = torch.utils.data.DataLoader(dataset=dataset_class,
@@ -141,16 +133,26 @@ def main(config):
             
             real_shape = [sample['rgb'][idx].shape[1], sample['rgb'][idx].shape[2], sample['rgb'][idx].shape[0]]
 
-            sample['point_cloud'][idx] = sample['point_cloud'][0].cuda() # Nx4
+            sample['point_cloud'][idx] = sample['point_cloud'][0].cuda() 
 
-            pc_init = sample['init_pc'][0].cuda() # Nx4
+            pc_init = sample['init_pc'][0].cuda()
 
             depth_img, uv_input, pc_input_valid = lidar_project_depth(pc_init, sample['K'][idx], real_shape)  # image_shape
             depth_img /= _config['max_depth']
 
             #show_depth(sample['rgb'][0], depth_img)
-            save_pointcloud(f"GT", sample['point_cloud'][0], [0, 1, 0])
-            save_pointcloud(f"init", pc_init, [0, 0, 1])
+            #save_pointcloud(f"GT", sample['point_cloud'][0], [0, 1, 0])
+            #save_pointcloud(f"init", pc_init, [0, 0, 1])
+            pd = o3d.geometry.PointCloud()
+            pd.points = o3d.utility.Vector3dVector(sample['point_cloud'][0][:,:3])
+            pd.paint_uniform_color([0,1,0])
+            o3d.io.write_point_cloud("gt.ply", pd)
+            
+            pd = o3d.geometry.PointCloud()
+            pd.points = o3d.utility.Vector3dVector(pc_init[:,:3].detach().cpu().numpy())
+            pd.paint_uniform_color([0,0,1])
+            o3d.io.write_point_cloud("init.ply", pd)
+            
 
             # PAD ONLY ON RIGHT AND BOTTOM SIDE
             rgb = sample['rgb'][idx].cuda() # 3, H, W
@@ -199,14 +201,23 @@ def main(config):
                 else:
                     pc_init = pc_init
 
-                pc_init = rotate_back(pc_init.type(torch.FloatTensor).cuda(), RT_predicted) # H_pred*X_init
+                #pc_init = rotate_back(pc_init.type(torch.FloatTensor).cuda(), RT_predicted) # H_pred*X_init
+                pc_init = torch.mm(pc_init.type(torch.FloatTensor).cuda(), RT_predicted)
 
                 depth_img_pred, uv_pred, pc_pred_valid = lidar_project_depth(pc_init, sample['K'][0], real_shape_input[0]) # image_shape
                 depth_img_pred /= _config['max_depth']
-                
+                print(RT_predicted)     
+                #print(np.linalg.inv(RT_predicted.detach().cpu().numpy()))
                 #show_depth(sample['rgb'][0], depth_img_pred)    
-                save_pointcloud(f"pred_{count}", pc_init, [1,1,0])            
-                count+=1
+                #save_pointcloud(f"pred_{count}", pc_init, [1,1,0])     
+                
+                pd = o3d.geometry.PointCloud()
+                pd.points = o3d.utility.Vector3dVector(pc_init[:,:3].detach().cpu().numpy())
+                pd.paint_uniform_color([1,0,0])
+                o3d.io.write_point_cloud(f"pred_{count+1}.ply", pd)
+            
+                       
+               	count+=1
                 depth_pred = F.pad(depth_img_pred, shape_pad_input[0])
                 lidar = depth_pred.unsqueeze(0)
                 lidar_resize = F.interpolate(lidar.type(torch.FloatTensor), size=[256, 512], mode="bilinear", align_corners=False)

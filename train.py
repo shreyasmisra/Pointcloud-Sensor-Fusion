@@ -23,7 +23,9 @@ from utils import (mat2xyzrpy, merge_inputs, overlay_imgs, quat2mat,
                    quaternion_from_matrix, rotate_back, rotate_forward,
                    tvector2mat)
 
-from dataset import IPadDataset        
+#from dataset import IPadDataset        
+from LabDataset import LabDataset
+
 
 from sacred import Experiment
 from sacred.utils import apply_backspaces_and_linefeeds
@@ -64,20 +66,22 @@ torch.backends.cudnn.benchmark = False
 ex = Experiment("LCCNet")
 ex.captured_out_filter = apply_backspaces_and_linefeeds
 
+# do 2 deg and 1 deg
+
 _config = {
     'checkpoints': './checkpoints/',
     'use_reflectance': False,
-    'epochs':50,
-    'BASE_LEARNING_RATE': 2e-5,
+    'epochs':100,
+    'BASE_LEARNING_RATE': 1e-5,
     'loss': 'combined',
-    'dataset_num': 3,
-    'max_t': 0.1,
-    'max_r': 1.,
+    'dataset_num': 3, # for ipadDataset
+    'max_t': 0.5,
+    'max_r': 5.,
     'occlusion_kernel': 5,
     'occlusion_threshold': 3.0,
     'network': 'Res_f1',
     'optimizer': 'adam',
-    'weights': './pretrained/kitti_iter5.tar',
+    'weights': './pretrained/kitti_iter3.tar',
     'rescale_rot': 1.0,
     'rescale_transl': 2.0,
     'resume': True,
@@ -86,7 +90,7 @@ _config = {
     'dropout': 0.0,
     'save_log': True,
     'dropout': 0.0,
-    'max_depth': 3.5,
+    'max_depth': 2.,
     'weight_point_cloud': 0.6,
     'starting_epoch': 1,
 }
@@ -118,27 +122,11 @@ def train(model, optimizer, rgb_img, refl_img, target_transl, target_rot, loss_f
 
     return losses, rot_err, transl_err
 
-def predict_(model, rgb, lidar, pc):
-
-    model.eval()
-
-    T_predicted, R_predicted = models(rgb, lidar)
-    R_predicted = quat2mat(R_predicted[0])
-    T_predicted = tvector2mat(T_predicted[0])
-    RT_predicted = torch.mm(rt, R_predicted)
-
-    pc_init = rotate_forward(pc_init.type(torch.FloatTensor).cuda(), RT_predicted)
-    
-    depth_img, uv = lidar_project_depth(pc_rotated, sample['K'][idx], real_shape) # image_shape
-    depth_img /= _config['max_depth']
-    
-    return pc_init
-
 def main(_config):
     global EPOCH
     print('Loss Function Choice: {}'.format(_config['loss']))
     
-    img_shape = (1440, 1920) 
+    img_shape = (1200, 1920) 
     input_size = (256, 512)
     
 
@@ -146,7 +134,8 @@ def main(_config):
     if not os.path.exists(model_savepath):
         os.makedirs(model_savepath)   
 
-    dataset_class = IPadDataset(num=_config['dataset_num'], max_r=_config['max_r'], max_t=_config['max_t'], with_batch=4000)
+    #dataset_class = IPadDataset(num=_config['dataset_num'], max_r=_config['max_r'], max_t=_config['max_t'], with_batch=4000)
+    dataset_class = LabDataset(max_r=_config['max_r'], max_t=_config['max_t'], with_batch=4000)
 
     # Training and validation set creation
     TrainImgLoader = torch.utils.data.DataLoader(dataset=dataset_class,
@@ -207,12 +196,12 @@ def main(_config):
     if _config['loss'] == 'geometric':
         parameters += list(loss_fn.parameters())
     if _config['optimizer'] == 'adam':
-        optimizer = optim.Adam(parameters, lr=_config['BASE_LEARNING_RATE'], weight_decay=5e-6)
+        optimizer = optim.Adam(parameters, lr=_config['BASE_LEARNING_RATE'], weight_decay=2e-6)
         # Probably this scheduler is not used
-        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[20, 50, 70], gamma=0.5)
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[130], gamma=0.1)
     else:
         optimizer = optim.SGD(parameters, lr=_config['BASE_LEARNING_RATE'], momentum=0.9,
-                              weight_decay=5e-6, nesterov=True)
+                              weight_decay=2e-6, nesterov=True)
 
     starting_epoch = _config['starting_epoch']
     if _config['weights'] is not None and _config['resume']:
@@ -330,7 +319,7 @@ def main(_config):
         print("------------------------------------")
     print('full training time = %.2f HR' % ((time.time() - start_full_time) / 3600))
 
-    torch.save(model.state_dict(), model_savepath + f'/finetune_rot_1_trans_0.1_{total_train_loss / len(dataset_class)}.pth') 
+    torch.save(model.state_dict(), model_savepath + f'/lab_sensors_finetune_rot_5_trans_0.5_{total_train_loss / len(dataset_class)}.pth') 
 
 if __name__ == '__main__':
 	main(_config)    
