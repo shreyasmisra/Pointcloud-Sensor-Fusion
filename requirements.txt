@@ -1,5 +1,5 @@
 scikit_image
-git+https://gitlab.com/m1lhaus/blender-mathutils.git
+mathutils
 tqdm==4.19.9
 pandas
 h5py
@@ -11,10 +11,8 @@ cupy_cuda90==6.0.0
 pykitti
 numpy
 tensorboardX
-open3d-python==0.7.0.0
+open3d-python
+open3d
 Pillow
 scikit-image
-torch==1.0.1.post2
-torchvision==0.2.2
-sacred==0.7.4
 -e ./models/correlation_package

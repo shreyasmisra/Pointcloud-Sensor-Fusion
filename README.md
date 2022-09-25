@@ -4,9 +4,8 @@ Method is based on LCCNET:
 
 ## Requirements
 
-* python>=3.7 (recommend to use [Anaconda](https://www.anaconda.com/))
-* PyTorch==1.0.1.post2
-* Torchvision==0.2.2
+1. python>=3.7 (recommend to use [Anaconda](https://www.anaconda.com/))
+2. Install latest pytorch [here](https://pytorch.org/get-started/locally/)
 * Install requirements and dependencies
 ```commandline
 pip install -r requirements.txt
