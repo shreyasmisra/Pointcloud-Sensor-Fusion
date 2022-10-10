@@ -4,12 +4,14 @@ Method is based on LCCNET:
 
 ## Requirements
 
-1. python>=3.7 (recommend to use [Anaconda](https://www.anaconda.com/))
-2. Install latest pytorch [here](https://pytorch.org/get-started/locally/)
-* Install requirements and dependencies
 ```commandline
-pip install -r requirements.txt
+conda env create -f environment.yml
+conda activate lccnet
+pip install -e models/correlation_package/
 ```
+
+Note: Ensure CUDA version matches pytorch version. Might work with the latest pytorch version (Not Tested).
+Install latest pytorch [here](https://pytorch.org/get-started/locally/)
 
 ## Pre-trained model
 

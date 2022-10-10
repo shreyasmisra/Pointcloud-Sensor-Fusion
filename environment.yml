@@ -48,7 +48,6 @@ dependencies:
     - charset-normalizer==2.0.11
     - colorama==0.4.4
     - contextvars==2.4
-    - correlation-cuda==0.0.0
     - cupy-cuda90==6.0.0
     - cycler==0.11.0
     - dataclasses==0.8
@@ -139,4 +138,3 @@ dependencies:
     - widgetsnbextension==3.5.2
     - wrapt==1.13.3
     - zipp==3.6.0
-prefix: /home/shreyasm/anaconda3/envs/lccnet
