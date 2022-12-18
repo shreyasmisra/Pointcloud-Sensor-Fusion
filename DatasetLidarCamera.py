@@ -255,6 +255,8 @@ class DatasetLidarCameraKittiOdometry(Dataset):
         R, T = invert_pose(R, T)
         R, T = torch.tensor(R), torch.tensor(T)
 
+        # TODO: Convert R (mathutils.quaternion) to ortho 6D
+
         #io.imshow(depth_img.numpy(), cmap='jet')
         #io.show()
         calib = self.K[seq]

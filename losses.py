@@ -140,6 +140,7 @@ class CombinedLoss(nn.Module):
             loss_transl = self.transl_loss(transl_err, target_transl).sum(1).mean()
         loss_rot = 0.
         if self.rescale_rot != 0.:
+            # TODO: Change to pose loss
             loss_rot = quaternion_distance(rot_err, target_rot, rot_err.device).mean()
         pose_loss = self.rescale_trans*loss_transl + self.rescale_rot*loss_rot
 

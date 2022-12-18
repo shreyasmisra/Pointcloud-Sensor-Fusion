@@ -379,7 +379,7 @@ class LCCNet(nn.Module):
         self.fc1_rot = nn.Linear(512, 256)
 
         self.fc2_trasl = nn.Linear(256, 3)
-        self.fc2_rot = nn.Linear(256, 4)
+        self.fc2_rot = nn.Linear(256, 6)
 
         self.dropout = nn.Dropout(dropout)
 
@@ -578,7 +578,7 @@ class LCCNet(nn.Module):
         rot = self.leakyRELU(self.fc1_rot(x))
         transl = self.fc2_trasl(transl)
         rot = self.fc2_rot(rot)
-        rot = F.normalize(rot, dim=1)
+        rot = F.normalize(rot, dim=1) # quaternion 
 
         return transl, rot
 
