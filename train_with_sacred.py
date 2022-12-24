@@ -238,9 +238,6 @@ def main(_config, _run, seed):
                                                 drop_last=False,
                                                 pin_memory=True)
 
-    print(len(TrainImgLoader))
-    print(len(ValImgLoader))
-
     # loss function choice
     if _config['loss'] == 'simple':
         loss_fn = ProposedLoss(_config['rescale_transl'], _config['rescale_rot'])
@@ -255,11 +252,6 @@ def main(_config, _run, seed):
         loss_fn = CombinedLoss(_config['rescale_transl'], _config['rescale_rot'], _config['weight_point_cloud'])
     else:
         raise ValueError("Unknown Loss Function")
-
-    #runs = datetime.now().strftime('%b%d_%H-%M-%S') + "/"
-    # train_writer = SummaryWriter('./logs/' + runs)
-    #ex.info["tensorflow"] = {}
-    #ex.info["tensorflow"]["logdirs"] = ['./logs/' + runs]
 
     # network choice and settings
     if _config['network'].startswith('Res'):

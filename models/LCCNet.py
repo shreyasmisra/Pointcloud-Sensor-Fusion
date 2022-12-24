@@ -379,7 +379,7 @@ class LCCNet(nn.Module):
         self.fc1_rot = nn.Linear(512, 256)
 
         self.fc2_trasl = nn.Linear(256, 3)
-        self.fc2_rot = nn.Linear(256, 6)
+        self.fc2_rot = nn.Linear(256, 4)
 
         self.dropout = nn.Dropout(dropout)
 
