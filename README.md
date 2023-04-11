@@ -1,6 +1,13 @@
 # Self-calibration of LiDAR and Camera
 
-Method is based on LCCNET: 
+### Goal
+Real-time calibration of a LiDAR and a Camera sensor by predicting the extrinsic matrix without external markers (checkerboards).
+
+### Problems with previous work
+- Most previous work in the LiDAR-Camera calibration domain, require external markers like checkerboards. 
+- Deep learning based methods are not accurate enough for engineering applications, especially when the scene does not contain any descriptive features like a plain wall.
+
+We use the base framework from LCCNet and improve the performance in feature scarce scenes by improving loss functions and optimization techniques.
 
 ## Requirements
 
@@ -17,7 +24,7 @@ Install latest pytorch [here](https://pytorch.org/get-started/locally/)
 
 Models pre-trained on KITTI dataset can be downloaded from [google drive](https://drive.google.com/drive/folders/1VbQV3ERDeT3QbdJviNCN71yoWIItZQnl?usp=sharing)
 
-Models pre-trained on Helios + Triton sensors can be download from [here](https://cmu.box.com/s/1f0gxmcch65yh9dk68y3vfnlcc8d8tw8). These models are finetuned using 4000 random initializations.
+Models pre-trained on Helios (LiDAR) + Triton (Camera) sensors can be download from [here](https://cmu.box.com/s/1f0gxmcch65yh9dk68y3vfnlcc8d8tw8). These models are finetuned using 4000 random initializations.
 
 ## Dataset
 1. DatasetLidarCamera: Dataset for KITTI odometry and raw datasets.
@@ -53,11 +60,13 @@ To run inference real-time, I would modify the `test.py` script to obtain the la
 
 <img src="assets/init_depth_img.png"
      width=400 />
+Initial pointcloud projected with random extrinsic matrix.
 
 ### Predicted depth image
 
 <img src="assets/depth_img.png"
      width=400 />
+Initial pointcloud projected with predicted extrinsic matrix.
 
 ## Evaluation on KITTI dataset
 
